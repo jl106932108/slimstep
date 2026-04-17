@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SlimStep">
+<meta name="theme-color" content="#0d0f14">
+<title>SlimStep 減重追蹤</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
+:root{--bg:#0d0f14;--card:#1e2330;--bd:#2a3045;--ac:#c8f566;--a2:#5be9c8;--a3:#ff7c5c;--a4:#a78bfa;--tx:#eef0f6;--mu:#7a8099;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{height:100%;}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-height:100%;overflow-x:hidden;}
+input,select,button{font-family:inherit;font-size:16px;border-radius:0;}
+input[type=number]{-moz-appearance:textfield;}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+.spin{width:26px;height:26px;border:3px solid var(--bd);border-top-color:var(--a2);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 8px;}
+@keyframes sp{to{transform:rotate(360deg);}}
+#app{max-width:480px;margin:0 auto;position:relative;}
+
+/* header */
+.hdr{background:linear-gradient(135deg,#161a22,#1a2035);padding:16px 18px 12px;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;}
+.logo b{color:var(--ac);}
+.dp{background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:4px 13px;font-size:12px;color:var(--mu);}
+
+/* nav */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#161a22;border-top:1px solid var(--bd);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom);}
+.nb{flex:1;background:none;border:none;color:var(--mu);padding:10px 0 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;transition:color .15s;}
+.nb.on{color:var(--ac);}
+.nb-i{font-size:20px;}
+
+/* pages */
+.pages{padding-bottom:calc(80px + env(safe-area-inset-bottom));}
+.pg{display:none;padding:16px;}
+.pg.on{display:block;}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-bottom:14px;}
+.row{display:flex;gap:9px;margin-bottom:12px;}
+.grp{flex:1;display:flex;flex-direction:column;gap:5px;}
+.grp label{font-size:11px;color:var(--mu);}
+.inp{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:12px 13px;color:var(--tx);width:100%;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s;}
+.inp:focus{border-color:var(--ac);}
+select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a8099'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+.btn{background:var(--ac);color:#0d0f14;border:none;border-radius:12px;padding:14px;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;cursor:pointer;width:100%;display:block;}
+.btn:active{opacity:.85;transform:scale(.99);}
+.btn2{background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:13px;font-family:'Syne',sans-serif;font-weight:600;font-size:14px;cursor:pointer;width:100%;}
+.sec{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.sec small{font-size:11px;font-weight:400;color:var(--mu);font-family:'DM Sans',sans-serif;}
+.empty{text-align:center;padding:28px;color:var(--mu);font-size:13px;}
+.ei{font-size:36px;margin-bottom:8px;}
+
+/* toast */
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--ac);color:#0d0f14;padding:9px 22px;border-radius:20px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;opacity:0;transition:opacity .25s,transform .25s;z-index:999;white-space:nowrap;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* onboarding */
+#ob{position:fixed;inset:0;background:#090b10;z-index:900;overflow-y:auto;display:none;}
+#ob.on{display:block;}
+.ob-hero{background:linear-gradient(160deg,#121a0e,#0d1520);padding:56px 24px 28px;text-align:center;}
+.ap-item{background:var(--bg);border:1px solid var(--bd);border-radius:11px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;transition:all .15s;}
+.ap-item.on{border-color:var(--ac);background:#1e2a18;}
+.ap-l{display:flex;align-items:center;gap:10px;}
+.ap-item.on .ap-val{color:var(--ac);}
+.ap-val{font-size:12px;color:var(--mu);}
+.ob-prev{background:var(--bg);border-radius:12px;padding:14px;margin-top:12px;display:none;}
+.ob-prev.on{display:block;}
+.ob-pr-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd);font-size:13px;}
+.ob-pr-row:last-child{border-bottom:none;}
+.ob-skip{text-align:center;padding:14px;font-size:13px;color:var(--mu);cursor:pointer;text-decoration:underline;}
+
+/* rings */
+.rings{display:flex;gap:9px;margin-bottom:16px;}
+.ring{flex:1;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:13px 8px;text-align:center;position:relative;overflow:hidden;}
+.ring::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.ring.g::after{background:var(--ac);}
+.ring.t::after{background:var(--a2);}
+.ring.r::after{background:var(--a3);}
+.ring.p::after{background:var(--a4);}
+.rn{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;line-height:1;margin-bottom:2px;}
+.ring.g .rn{color:var(--ac);}
+.ring.t .rn{color:var(--a2);}
+.ring.r .rn{color:var(--a3);}
+.ring.p .rn{color:var(--a4);}
+.rl{font-size:9px;color:var(--mu);}
+
+/* wl banner */
+.wlb{background:linear-gradient(135deg,#1e2a18,#1a2a22);border:1px solid #3a5030;border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+
+/* meter */
+.mrow{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.mrow:last-child{margin-bottom:0;}
+.mtrack{background:var(--bg);border-radius:5px;height:7px;overflow:hidden;flex:1;}
+.mfill{height:100%;border-radius:5px;transition:width .6s ease;}
+.defbox{background:var(--bg);border-radius:12px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+
+/* food */
+.ubox{background:var(--card);border:2px dashed var(--bd);border-radius:16px;padding:24px 18px;text-align:center;margin-bottom:14px;}
+.ubtn-row{display:flex;gap:10px;justify-content:center;margin-top:16px;}
+.ubtn{border:none;border-radius:11px;padding:12px 18px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;}
+.prev-wrap{display:none;margin-bottom:14px;position:relative;}
+.prev-wrap img{width:100%;border-radius:14px;max-height:220px;object-fit:cover;display:block;}
+.prev-x{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;line-height:30px;text-align:center;}
+.aiload{display:none;text-align:center;padding:18px;color:var(--mu);font-size:13px;}
+.ai-panel{display:none;background:var(--card);border:1px solid var(--a2);border-radius:16px;padding:16px;margin-bottom:14px;}
+.ai-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd);font-size:13px;}
+.ai-row:last-of-type{border-bottom:none;}
+.ai-sum{display:flex;justify-content:space-between;margin-top:11px;padding-top:11px;border-top:1px solid var(--bd);font-family:'Syne',sans-serif;font-weight:700;font-size:15px;}
+.khint{background:#1a2a22;border:1px solid var(--a2);border-radius:11px;padding:10px 13px;margin-bottom:11px;display:none;align-items:center;gap:8px;font-size:13px;}
+.khint.on{display:flex;}
+.kspin{width:15px;height:15px;border:2px solid var(--bd);border-top-color:var(--a2);border-radius:50%;animation:sp .8s linear infinite;flex-shrink:0;}
+.kapply{background:var(--a2);color:#0d0f14;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;}
+.fitem{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:13px 14px;margin-bottom:9px;display:flex;gap:11px;align-items:center;}
+.fthumb{width:48px;height:48px;border-radius:9px;flex-shrink:0;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;}
+.fthumb img{width:100%;height:100%;object-fit:cover;}
+.fn{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;margin-bottom:2px;}
+.fd{font-size:11px;color:var(--mu);}
+.fk{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--a2);}
+.del{background:none;border:none;color:var(--mu);cursor:pointer;font-size:15px;padding:3px;flex-shrink:0;}
+.tab-row{display:flex;gap:8px;margin-bottom:14px;}
+.tab-btn{background:var(--bg);border:1px solid var(--bd);color:var(--mu);border-radius:9px;padding:8px 14px;font-size:13px;cursor:pointer;transition:all .15s;}
+.tab-btn.on{border-color:var(--a2);color:var(--a2);}
+
+/* stats */
+.sh{background:linear-gradient(135deg,#1a2a14,#1a3028);border:1px solid #3a5030;border-radius:18px;padding:22px;margin-bottom:16px;text-align:center;}
+.sh-n{font-family:'Syne',sans-serif;font-size:44px;font-weight:800;color:var(--ac);line-height:1;margin-bottom:3px;}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
+.sc{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;}
+.sc-n{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px;}
+.bars{display:flex;align-items:flex-end;gap:5px;height:90px;margin-top:12px;}
+.bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end;}
+.bar{width:100%;border-radius:5px 5px 0 0;background:var(--bd);}
+.bday{font-size:10px;color:var(--mu);}
+
+/* profile */
+.bmrbox{background:var(--bg);border-radius:12px;padding:14px;margin:12px 0;}
+.br{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bd);font-size:13px;}
+.br:last-child{border-bottom:none;}
+.br .ll{color:var(--mu);}
+.br .vv{font-family:'Syne',sans-serif;font-weight:700;}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="toast" id="toast"></div>
+
+<!-- ONBOARDING -->
+<div id="ob">
+  <div class="ob-hero">
+    <div class="logo" style="font-size:34px;margin-bottom:8px;">Slim<b>Step</b></div>
+    <div style="color:var(--mu);font-size:13px;margin-bottom:18px;">科學計算代謝率 · 依年齡計算 BMR · 資料永久保存</div>
+    <div style="display:inline-block;background:#1a2a14;border:1px solid #3a5030;border-radius:20px;padding:5px 14px;font-size:12px;color:var(--ac);">⚡ 設定一次，永久使用</div>
+  </div>
+  <div style="padding:20px 20px 40px;">
+    <div class="card">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--a2);margin-bottom:14px;">🧍 基本資料</div>
+      <div class="row">
+        <div class="grp"><label>年齡（歲）</label><input class="inp" type="number" id="ob-age" placeholder="30" oninput="obCalc()"></div>
+        <div class="grp"><label>性別</label><select class="inp" id="ob-gen" onchange="obCalc()"><option value="male">男性</option><option value="female">女性</option></select></div>
+      </div>
+      <div class="row" style="margin-bottom:0">
+        <div class="grp"><label>體重（kg）</label><input class="inp" type="number" id="ob-w" placeholder="60" step="0.1" oninput="obCalc()"></div>
+        <div class="grp"><label>身高（cm）</label><input class="inp" type="number" id="ob-h" placeholder="165" oninput="obCalc()"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--a2);margin-bottom:14px;">🏃 日常活動量</div>
+      <div class="ap-item on" data-v="1.2" onclick="selAct(this)"><div class="ap-l"><span style="font-size:19px">🪑</span><div><div style="font-size:13px;font-weight:500">久坐辦公</div><div style="font-size:11px;color:var(--mu)">幾乎不運動</div></div></div><div class="ap-val">×1.2</div></div>
+      <div class="ap-item" data-v="1.375" onclick="selAct(this)"><div class="ap-l"><span style="font-size:19px">🚶</span><div><div style="font-size:13px;font-weight:500">輕度活動</div><div style="font-size:11px;color:var(--mu)">每週1-2次</div></div></div><div class="ap-val">×1.375</div></div>
+      <div class="ap-item" data-v="1.55" onclick="selAct(this)"><div class="ap-l"><span style="font-size:19px">🏋️</span><div><div style="font-size:13px;font-weight:500">中度活動</div><div style="font-size:11px;color:var(--mu)">每週3-5次</div></div></div><div class="ap-val">×1.55</div></div>
+      <div class="ap-item" data-v="1.725" onclick="selAct(this)"><div class="ap-l"><span style="font-size:19px">🔥</span><div><div style="font-size:13px;font-weight:500">高度活動</div><div style="font-size:11px;color:var(--mu)">每天運動</div></div></div><div class="ap-val">×1.725</div></div>
+      <div class="ob-prev" id="ob-prev">
+        <div style="font-size:11px;color:var(--mu);margin-bottom:8px;">📊 預估結果（依年齡計算）</div>
+        <div class="ob-pr-row"><span style="color:var(--mu)">🧬 基礎代謝 BMR</span><span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--a2)" id="ob-bmr">—</span></div>
+        <div class="ob-pr-row"><span style="color:var(--mu)">🔥 每日總消耗 TDEE</span><span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--ac)" id="ob-tdee">—</span></div>
+        <div class="ob-pr-row"><span style="color:var(--mu)">🎯 減重建議攝入</span><span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--a3)" id="ob-goal">—</span></div>
+      </div>
+    </div>
+    <button class="btn" onclick="finishOb()">開始追蹤 →</button>
+    <div class="ob-skip" onclick="skipOb()">先跳過</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="logo">Slim<b>Step</b></div>
+    <div class="dp" id="dp"></div>
+  </div>
+  <div style="font-size:11px;color:var(--mu);" id="hsub">載入中...</div>
+</div>
+
+<div class="pages">
+
+<!-- HOME -->
+<div class="pg on" id="pg-home">
+  <div id="warn" style="background:#2a1a10;border:1px solid #6b3020;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#ffaa80;display:none;" onclick="goPage('profile')">
+    ⚠️ 尚未設定個人資料，點此設定以啟用 TDEE 計算 →
+  </div>
+  <div class="rings">
+    <div class="ring t"><div class="rn" id="h-steps">0</div><div class="rl">今日步數</div></div>
+    <div class="ring r"><div class="rn" id="h-in">0</div><div class="rl">攝入kcal</div></div>
+    <div class="ring g"><div class="rn" id="h-sb">0</div><div class="rl">步行消耗</div></div>
+    <div class="ring p"><div class="rn" id="h-bmr">—</div><div class="rl">基礎代謝</div></div>
+  </div>
+  <div class="wlb">
+    <div>
+      <div style="font-size:11px;color:var(--mu);margin-bottom:3px;">今日預估減重</div>
+      <div style="font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--ac);line-height:1;" id="h-wl">0<span style="font-size:13px;color:var(--mu);margin-left:3px;">g</span></div>
+      <div style="font-size:11px;color:var(--mu);margin-top:3px;" id="h-wls">設定個人資料後啟用</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:24px;" id="h-streak">🔥0</div>
+      <div style="font-size:10px;color:var(--mu);">連續天數</div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">今日熱量概覽</div>
+      <div style="background:#1a2a18;border:1px solid #3a5030;border-radius:10px;padding:3px 9px;font-size:11px;color:var(--ac);">🤖 系統預估</div>
+    </div>
+    <div class="mrow"><span style="font-size:16px;width:24px;flex-shrink:0;text-align:center;">🧬</span><div style="flex:1"><div style="font-size:11px;color:var(--mu);margin-bottom:3px;">基礎代謝 BMR（Mifflin-St Jeor）</div><div class="mtrack"><div class="mfill" id="mb" style="width:0%;background:var(--a4)"></div></div></div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--a4);" id="mbv">—</div></div>
+    <div class="mrow"><span style="font-size:16px;width:24px;flex-shrink:0;text-align:center;">🔥</span><div style="flex:1"><div style="font-size:11px;color:var(--mu);margin-bottom:3px;">每日總消耗 TDEE = BMR × 活動係數</div><div class="mtrack"><div class="mfill" id="mt" style="width:0%;background:var(--a4)"></div></div></div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--a4);" id="mtv">—</div></div>
+    <div class="mrow"><span style="font-size:16px;width:24px;flex-shrink:0;text-align:center;">👟</span><div style="flex:1"><div style="font-size:11px;color:var(--mu);margin-bottom:3px;">步行額外消耗</div><div class="mtrack"><div class="mfill" id="ms" style="width:0%;background:var(--ac)"></div></div></div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--ac);" id="msv">0 kcal</div></div>
+    <div class="mrow"><span style="font-size:16px;width:24px;flex-shrink:0;text-align:center;">🥗</span><div style="flex:1"><div style="font-size:11px;color:var(--mu);margin-bottom:3px;">飲食攝入</div><div class="mtrack"><div class="mfill" id="mi" style="width:0%;background:var(--a2)"></div></div></div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--a2);" id="miv">0 kcal</div></div>
+    <div class="defbox">
+      <div><div style="font-size:11px;color:var(--mu);">熱量缺口 = TDEE + 步行 − 攝入</div><div style="font-size:10px;color:var(--mu);margin-top:1px;">缺口越大，今日減脂越多</div></div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;" id="h-dv">— kcal</div>
+    </div>
+  </div>
+  <div class="sec">最近飲食 <small id="h-fc"></small></div>
+  <div id="h-fl"><div class="empty"><div class="ei">🥙</div>還沒記錄今日飲食</div></div>
+</div>
+
+<!-- STEPS -->
+<div class="pg" id="pg-steps">
+  <div class="sec">記錄步數</div>
+  <div class="card">
+    <div class="row">
+      <div class="grp"><label>步數</label><input class="inp" type="number" id="si-n" placeholder="例：8000" min="0"></div>
+      <div class="grp"><label>體重 kg</label><input class="inp" type="number" id="si-w" placeholder="60" step="0.1"></div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div class="grp"><label>步行速度</label>
+        <select class="inp" id="si-spd">
+          <option value="3.2">🐢 慢走 3.2 km/h</option>
+          <option value="4.8" selected>🚶 一般 4.8 km/h</option>
+          <option value="6.0">🚶‍♂️ 快走 6.0 km/h</option>
+          <option value="8.0">🏃 慢跑 8.0 km/h</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="addStep()">✅ 記錄步數</button>
+  </div>
+  <div class="sec">今日記錄 <small id="st-tot"></small></div>
+  <div id="st-log"><div class="empty"><div class="ei">👟</div>今天還沒記錄步數</div></div>
+</div>
+
+<!-- FOOD -->
+<div class="pg" id="pg-food">
+  <div class="sec">記錄飲食</div>
+  <div class="tab-row">
+    <button class="tab-btn on" id="tb-photo" onclick="swTab('photo')">📷 拍照分析</button>
+    <button class="tab-btn" id="tb-manual" onclick="swTab('manual')">✏️ 手動輸入</button>
+  </div>
+  <!-- Photo -->
+  <div id="tab-photo">
+    <input type="file" id="ffile" accept="image/*" style="display:none;" onchange="onFile(event)">
+    <div class="ubox" id="ubox">
+      <div style="font-size:34px;margin-bottom:8px;">📷</div>
+      <div style="color:var(--a2);font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:4px;">拍照或選擇圖片</div>
+      <div style="font-size:13px;color:var(--mu);">AI 自動辨識每道菜熱量</div>
+      <div class="ubtn-row">
+        <button class="ubtn" style="background:var(--a2);color:#0d0f14;" onclick="openGallery()">🖼️ 從相簿</button>
+        <button class="ubtn" style="background:var(--ac);color:#0d0f14;" onclick="openCamera()">📷 直接拍照</button>
+      </div>
+    </div>
+    <div class="prev-wrap" id="prev-wrap">
+      <img id="prev-img" src="" alt="">
+      <button class="prev-x" onclick="resetPhoto()">✕</button>
+    </div>
+    <div class="aiload" id="aiload"><div class="spin"></div>AI 正在辨識食物熱量...</div>
+    <div class="ai-panel" id="ai-panel">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--a2);margin-bottom:12px;font-size:14px;">🤖 AI 辨識結果</div>
+      <div id="ai-rows"></div>
+      <div class="ai-sum"><span>總熱量</span><span style="color:var(--ac)" id="ai-total">0 kcal</span></div>
+      <button class="btn" style="margin-top:14px;" onclick="confirmPhoto()">✅ 確認加入飲食記錄</button>
+    </div>
+  </div>
+  <!-- Manual -->
+  <div id="tab-manual" style="display:none;">
+    <div class="card">
+      <div class="grp" style="margin-bottom:11px;">
+        <label>食物名稱</label>
+        <input class="inp" type="text" id="fi-name" placeholder="例：白飯一碗、雞腿便當" oninput="onNameInput(this.value)">
+      </div>
+      <div class="khint" id="khint">
+        <div class="kspin" id="kspin"></div>
+        <span id="khint-txt" style="flex:1;color:var(--mu)">AI 預估中...</span>
+        <button class="kapply" id="kapply" style="display:none" onclick="applyHint()">套用</button>
+      </div>
+      <div class="grp" style="margin-bottom:12px;">
+        <label>熱量 kcal（輸入名稱後 AI 自動預估，點「套用」填入）</label>
+        <input class="inp" type="number" id="fi-kcal" placeholder="或手動輸入..." min="0">
+      </div>
+      <button class="btn" onclick="addManual()">✅ 加入記錄</button>
+    </div>
+  </div>
+  <div class="sec" style="margin-top:4px;">今日飲食記錄 <small id="f-tot"></small></div>
+  <div id="f-log"><div class="empty"><div class="ei">🥗</div>今天還沒記錄飲食</div></div>
+</div>
+
+<!-- STATS -->
+<div class="pg" id="pg-stats">
+  <div class="sh">
+    <div style="font-size:12px;color:var(--mu);margin-bottom:5px;">本週預估總減重</div>
+    <div class="sh-n" id="st-wl">0g</div>
+    <div style="font-size:12px;color:var(--mu);">TDEE + 步行 − 飲食</div>
+  </div>
+  <div class="sg">
+    <div class="sc"><div style="font-size:20px;margin-bottom:6px;">👣</div><div class="sc-n" id="st-as" style="color:var(--a2)">0</div><div style="font-size:10px;color:var(--mu)">平均每日步數</div></div>
+    <div class="sc"><div style="font-size:20px;margin-bottom:6px;">🔥</div><div class="sc-n" id="st-ab" style="color:var(--ac)">0</div><div style="font-size:10px;color:var(--mu)">平均步行消耗 kcal</div></div>
+    <div class="sc"><div style="font-size:20px;margin-bottom:6px;">🥗</div><div class="sc-n" id="st-ai" style="color:var(--a2)">0</div><div style="font-size:10px;color:var(--mu)">平均飲食攝入 kcal</div></div>
+    <div class="sc"><div style="font-size:20px;margin-bottom:6px;">⚡</div><div class="sc-n" id="st-ad" style="color:var(--a3)">0</div><div style="font-size:10px;color:var(--mu)">平均每日缺口 kcal</div></div>
+  </div>
+  <div class="card">
+    <div class="sec" style="margin-bottom:0;">本週熱量缺口 <small>橘色＝有缺口</small></div>
+    <div class="bars" id="wchart"></div>
+  </div>
+  <div class="card">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--a2);margin-bottom:12px;">📐 計算公式</div>
+    <div style="font-size:12px;color:var(--mu);line-height:2.1;">
+      <p>• BMR（Mifflin-St Jeor）：年齡越大 BMR 越低</p>
+      <p>• TDEE = BMR × 活動係數（1.2–1.725）</p>
+      <p>• 熱量缺口 = TDEE + 步行消耗 − 飲食攝入</p>
+      <p>• 累積 <b style="color:var(--ac)">7,700 kcal 缺口</b> ≈ 減 1 kg 脂肪</p>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="pg" id="pg-profile">
+  <div class="sec">個人設定</div>
+  <div class="card">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--a2);margin-bottom:14px;">🧍 基本資料</div>
+    <div class="row">
+      <div class="grp"><label>年齡（歲）</label><input class="inp" type="number" id="p-age" placeholder="30"></div>
+      <div class="grp"><label>性別</label><select class="inp" id="p-gen"><option value="male">男性</option><option value="female">女性</option></select></div>
+    </div>
+    <div class="row">
+      <div class="grp"><label>體重（kg）</label><input class="inp" type="number" id="p-w" placeholder="60" step="0.1"></div>
+      <div class="grp"><label>身高（cm）</label><input class="inp" type="number" id="p-h" placeholder="165"></div>
+    </div>
+    <div style="margin-bottom:0;">
+      <div class="grp"><label>活動量</label>
+        <select class="inp" id="p-act">
+          <option value="1.2">🪑 久坐辦公 ×1.2</option>
+          <option value="1.375">🚶 輕度活動 ×1.375</option>
+          <option value="1.55">🏋️ 中度活動 ×1.55</option>
+          <option value="1.725">🔥 高度活動 ×1.725</option>
+        </select>
+      </div>
+    </div>
+    <div class="bmrbox" id="bmrbox" style="display:none;">
+      <div class="br"><span class="ll">🧬 BMR</span><span class="vv" id="p-bmr" style="color:var(--a2)">—</span></div>
+      <div class="br"><span class="ll">⚡ 活動係數</span><span class="vv" id="p-actv" style="color:var(--mu)">—</span></div>
+      <div class="br"><span class="ll">🔥 TDEE</span><span class="vv" id="p-tdee" style="color:var(--ac);font-size:18px">—</span></div>
+      <div class="br"><span class="ll">🎯 減重建議攝入</span><span class="vv" id="p-goal" style="color:var(--a3)">—</span></div>
+      <div style="font-size:11px;color:var(--mu);margin-top:9px;line-height:1.7;" id="p-note"></div>
+    </div>
+    <button class="btn" style="margin-top:14px;" onclick="saveProf()">💾 儲存設定</button>
+  </div>
+  <div class="card">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--a2);margin-bottom:14px;">📅 資料管理</div>
+    <button class="btn2" style="margin-bottom:9px;" onclick="clearToday()">🗑️ 清除今日記錄</button>
+    <button class="btn2" style="color:var(--a3);border-color:var(--a3);" onclick="clearAll()">⚠️ 清除所有資料</button>
+  </div>
+</div>
+
+</div><!-- /pages -->
+
+<nav class="nav">
+  <button class="nb on" id="nb-home" onclick="goPage('home')"><span class="nb-i">🏠</span>首頁</button>
+  <button class="nb" id="nb-steps" onclick="goPage('steps')"><span class="nb-i">👟</span>步數</button>
+  <button class="nb" id="nb-food" onclick="goPage('food')"><span class="nb-i">🍽️</span>飲食</button>
+  <button class="nb" id="nb-stats" onclick="goPage('stats')"><span class="nb-i">📊</span>統計</button>
+  <button class="nb" id="nb-profile" onclick="goPage('profile')"><span class="nb-i">⚙️</span>設定</button>
+</nav>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  STORAGE — localStorage (穩定在 HTTPS)
+// ═══════════════════════════════════════
+const LS_DATA = 'ss_data_v1';
+const LS_PROF = 'ss_prof_v1';
+
+function lsGet(key) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+  catch { return null; }
+}
+function lsSet(key, val) {
+  try {
+    // 不存圖片base64 — 只存文字資料
+    localStorage.setItem(key, JSON.stringify(val));
+    return true;
+  } catch(e) {
+    // Storage full? Try to clear old data
+    if (e.name === 'QuotaExceededError') {
+      toast('⚠️ 儲存空間不足，自動清除舊資料');
+      pruneOldData();
+      try { localStorage.setItem(key, JSON.stringify(val)); return true; } catch { return false; }
+    }
+    return false;
+  }
+}
+
+function pruneOldData() {
+  // Keep only last 30 days
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const cutStr = cutoff.toISOString().split('T')[0];
+  Object.keys(DATA).forEach(k => { if (k < cutStr) delete DATA[k]; });
+}
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let PROF = null;
+let DATA = {};
+let IMG = {};          // session only — images not persisted
+let obAct = 1.2;
+let hintTimer = null, hintKcal = null;
+let pendAI = null, pendImgKey = null;
+
+const TD = () => new Date().toISOString().split('T')[0];
+const NW = () => new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+
+function fmtD(ds) {
+  const d = new Date(ds+'T00:00:00');
+  return `${d.getMonth()+1}/${d.getDate()} (${'日一二三四五六'[d.getDay()]})`;
+}
+function calcBMR(w,h,a,g) {
+  if(!w||!h||!a) return 0;
+  const b = 10*w + 6.25*h - 5*a;
+  return Math.round(g==='female' ? b-161 : b+5);
+}
+function calcTDEE(b,act) { return Math.round(b*(act||1.375)); }
+function s2k(n,w,s) {
+  const m={3.2:2.8,4.8:3.8,6.0:5.0,8.0:8.0};
+  return Math.round((m[s]||3.8)*w*(n*0.0008/s));
+}
+function ageNote(a) {
+  if(!a) return '';
+  if(a<30) return '💡 代謝旺盛，是養成好習慣的黃金期！';
+  if(a<40) return '💡 30歲後BMR每10年降2-3%，建議增加肌力訓練。';
+  if(a<50) return '💡 40歲後飲食控制比單純有氧更關鍵。';
+  if(a<60) return '💡 50歲後高蛋白飲食＋重訓可有效維持BMR。';
+  return '💡 60歲以上建議諮詢營養師規劃個人方案。';
+}
+
+async function callAI(msgs, max) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:max||300,messages:msgs})
+  });
+  if(!r.ok) throw new Error(r.status);
+  const d = await r.json();
+  return d.content.map(c=>c.text||'').join('');
+}
+
+function saveData() { lsSet(LS_DATA, DATA); }
+function saveProf_() { lsSet(LS_PROF, PROF); }
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  PROF = lsGet(LS_PROF);
+  DATA = lsGet(LS_DATA) || {};
+  document.getElementById('dp').textContent = fmtD(TD());
+  if (!PROF?.weight || !PROF?.age) {
+    document.getElementById('ob').classList.add('on');
+  } else {
+    loadProfUI();
+    updateAll();
+  }
+});
+
+// ── Toast ────────────────────────────────────────────
+let _tt;
+function toast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('on');
+  clearTimeout(_tt); _tt = setTimeout(()=>t.classList.remove('on'), 2800);
+}
+
+// ── Nav ──────────────────────────────────────────────
+function goPage(n) {
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+n).classList.add('on');
+  document.getElementById('nb-'+n).classList.add('on');
+  if(n==='stats') buildChart();
+  if(n==='home') updateAll();
+  window.scrollTo(0,0);
+}
+
+// ── Onboarding ────────────────────────────────────────
+function selAct(el) {
+  document.querySelectorAll('.ap-item').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on'); obAct = parseFloat(el.dataset.v); obCalc();
+}
+function obCalc() {
+  const a=parseInt(document.getElementById('ob-age').value);
+  const g=document.getElementById('ob-gen').value;
+  const w=parseFloat(document.getElementById('ob-w').value);
+  const h=parseFloat(document.getElementById('ob-h').value);
+  const pr=document.getElementById('ob-prev');
+  if(!a||!w||!h){pr.classList.remove('on');return;}
+  const b=calcBMR(w,h,a,g), t=calcTDEE(b,obAct);
+  document.getElementById('ob-bmr').textContent=b+' kcal';
+  document.getElementById('ob-tdee').textContent=t+' kcal';
+  document.getElementById('ob-goal').textContent=(t-400)+' kcal';
+  pr.classList.add('on');
+}
+function finishOb() {
+  PROF = {
+    age:parseInt(document.getElementById('ob-age').value)||null,
+    gender:document.getElementById('ob-gen').value,
+    weight:parseFloat(document.getElementById('ob-w').value)||null,
+    height:parseFloat(document.getElementById('ob-h').value)||null,
+    activity:obAct
+  };
+  saveProf_();
+  document.getElementById('ob').classList.remove('on');
+  loadProfUI(); updateAll(); toast('設定完成！開始追蹤 🎉');
+}
+function skipOb() { document.getElementById('ob').classList.remove('on'); updateAll(); }
+
+// ── Profile ───────────────────────────────────────────
+function loadProfUI() {
+  if(!PROF) return;
+  if(PROF.age) document.getElementById('p-age').value=PROF.age;
+  if(PROF.gender) document.getElementById('p-gen').value=PROF.gender;
+  if(PROF.weight) { document.getElementById('p-w').value=PROF.weight; document.getElementById('si-w').value=PROF.weight; }
+  if(PROF.height) document.getElementById('p-h').value=PROF.height;
+  if(PROF.activity) document.getElementById('p-act').value=PROF.activity;
+  renderBMR();
+}
+function saveProf() {
+  PROF = {
+    age:parseInt(document.getElementById('p-age').value)||null,
+    gender:document.getElementById('p-gen').value,
+    weight:parseFloat(document.getElementById('p-w').value)||null,
+    height:parseFloat(document.getElementById('p-h').value)||null,
+    activity:parseFloat(document.getElementById('p-act').value)||1.375
+  };
+  saveProf_();
+  if(PROF.weight) document.getElementById('si-w').value=PROF.weight;
+  renderBMR(); updateAll(); toast('個人資料已更新');
+}
+function renderBMR() {
+  if(!PROF?.weight||!PROF?.age) return;
+  const b=calcBMR(PROF.weight,PROF.height,PROF.age,PROF.gender);
+  const t=calcTDEE(b,PROF.activity);
+  document.getElementById('p-bmr').textContent=b+' kcal';
+  document.getElementById('p-actv').textContent='×'+PROF.activity;
+  document.getElementById('p-tdee').textContent=t+' kcal';
+  document.getElementById('p-goal').textContent=(t-400)+' kcal';
+  document.getElementById('p-note').textContent=ageNote(PROF.age);
+  document.getElementById('bmrbox').style.display='block';
+  document.getElementById('hsub').textContent=`BMR ${b} · TDEE ${t} · 目標 ${t-400} kcal`;
+}
+
+// ── Steps ─────────────────────────────────────────────
+function addStep() {
+  const n=parseInt(document.getElementById('si-n').value);
+  const w=parseFloat(document.getElementById('si-w').value)||PROF?.weight||60;
+  const spd=parseFloat(document.getElementById('si-spd').value);
+  if(!n||n<1){toast('請輸入步數！');return;}
+  const kcal=s2k(n,w,spd);
+  const td=TD();
+  if(!DATA[td]) DATA[td]={steps:[],foods:[]};
+  DATA[td].steps.push({n,w,spd,kcal,t:NW()});
+  saveData();
+  document.getElementById('si-n').value='';
+  toast(`記錄 ${n.toLocaleString()} 步，消耗 ${kcal} kcal`);
+  rendSteps(); updateAll();
+}
+function delStep(i) {
+  DATA[TD()].steps.splice(i,1);
+  saveData(); rendSteps(); updateAll();
+}
+function rendSteps() {
+  const td=TD(), d=DATA[td]||{steps:[]};
+  const ts=d.steps.reduce((s,x)=>s+x.n,0);
+  const tk=d.steps.reduce((s,x)=>s+x.kcal,0);
+  document.getElementById('st-tot').textContent=ts?`${ts.toLocaleString()} 步 · ${tk} kcal`:'';
+  const con=document.getElementById('st-log');
+  if(!d.steps.length){con.innerHTML='<div class="empty"><div class="ei">👟</div>今天還沒記錄步數</div>';return;}
+  const wrap=document.createElement('div');
+  wrap.style.cssText='background:var(--card);border:1px solid var(--bd);border-radius:16px;overflow:hidden;';
+  wrap.innerHTML=d.steps.map((x,i)=>`
+    <div style="display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid var(--bd);gap:12px;">
+      <div style="width:38px;height:38px;border-radius:11px;background:#1a2a18;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">🚶</div>
+      <div style="flex:1">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--ac)">${x.n.toLocaleString()} 步</div>
+        <div style="font-size:11px;color:var(--mu)">${x.t} · ${x.spd} km/h · ${x.w}kg</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--ac)">${x.kcal} kcal</div>
+        <div style="font-size:11px;color:var(--mu)">消耗</div>
+      </div>
+      <button class="del" onclick="delStep(${i})">🗑️</button>
+    </div>`).join('').replace(/border-bottom[^;]+;(?=[^<]*<\/div>\s*$)/,'');
+  con.innerHTML=''; con.appendChild(wrap);
+}
+
+// ── Food photo ────────────────────────────────────────
+function swTab(tab) {
+  document.getElementById('tab-photo').style.display=tab==='photo'?'block':'none';
+  document.getElementById('tab-manual').style.display=tab==='manual'?'block':'none';
+  document.getElementById('tb-photo').classList.toggle('on',tab==='photo');
+  document.getElementById('tb-manual').classList.toggle('on',tab==='manual');
+}
+function openCamera() { const f=document.getElementById('ffile'); f.setAttribute('capture','environment'); f.click(); }
+function openGallery() { const f=document.getElementById('ffile'); f.removeAttribute('capture'); f.click(); }
+function onFile(e) {
+  const file=e.target.files[0]; if(!file) return;
+  e.target.value='';
+  const r=new FileReader();
+  r.onload=ev=>{
+    const b64=ev.target.result;
+    document.getElementById('prev-img').src=b64;
+    document.getElementById('prev-wrap').style.display='block';
+    document.getElementById('ubox').style.display='none';
+    document.getElementById('ai-panel').style.display='none';
+    document.getElementById('aiload').style.display='block';
+    const k='img_'+Date.now(); pendImgKey=k; IMG[k]=b64;
+    analyzePhoto(b64);
+  };
+  r.readAsDataURL(file);
+}
+async function analyzePhoto(b64) {
+  try {
+    const base=b64.split(',')[1], mt=b64.split(';')[0].split(':')[1];
+    const txt=await callAI([{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:mt,data:base}},
+      {type:'text',text:'辨識圖片食物並估算熱量。只回傳純JSON不含說明或markdown：{"items":[{"name":"食物名稱","amount":"份量","kcal":數字}],"total":數字}  依台灣常見份量估算。'}
+    ]}],800);
+    const obj=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    pendAI=obj;
+    document.getElementById('aiload').style.display='none';
+    document.getElementById('ai-rows').innerHTML=obj.items.map(x=>`<div class="ai-row"><span>${x.name} <small style="color:var(--mu)">${x.amount}</small></span><span style="color:var(--a2);font-weight:600">${x.kcal} kcal</span></div>`).join('');
+    document.getElementById('ai-total').textContent=obj.total+' kcal';
+    document.getElementById('ai-panel').style.display='block';
+  } catch {
+    document.getElementById('aiload').style.display='none';
+    toast('AI 辨識失敗，請改用手動輸入');
+    resetPhoto();
+  }
+}
+function confirmPhoto() {
+  if(!pendAI) return;
+  const td=TD();
+  if(!DATA[td]) DATA[td]={steps:[],foods:[]};
+  // Store imgKey only (not base64) — image lives in session memory
+  DATA[td].foods.push({type:'ai',name:pendAI.items.map(x=>x.name).join('、'),kcal:pendAI.total,imgKey:pendImgKey,t:NW()});
+  saveData();
+  toast(`已記錄 ${pendAI.total} kcal`);
+  resetPhoto(); rendFood(); updateAll();
+}
+function resetPhoto() {
+  pendAI=null; pendImgKey=null;
+  document.getElementById('prev-wrap').style.display='none';
+  document.getElementById('ubox').style.display='block';
+  document.getElementById('ai-panel').style.display='none';
+  document.getElementById('aiload').style.display='none';
+}
+
+// ── Food manual ───────────────────────────────────────
+function onNameInput(v) {
+  clearTimeout(hintTimer); hintKcal=null;
+  const h=document.getElementById('khint');
+  if(v.trim().length<2){h.classList.remove('on');return;}
+  h.classList.add('on');
+  document.getElementById('kspin').style.display='block';
+  document.getElementById('khint-txt').textContent='AI 預估中...';
+  document.getElementById('khint-txt').style.color='var(--mu)';
+  document.getElementById('kapply').style.display='none';
+  hintTimer=setTimeout(()=>fetchHint(v.trim()),900);
+}
+async function fetchHint(name) {
+  try {
+    const txt=await callAI([{role:'user',content:`台灣常見食物「${name}」一份的熱量？只回傳純JSON：{"kcal":數字,"note":"份量說明"}`}],150);
+    const obj=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    hintKcal=obj.kcal;
+    document.getElementById('kspin').style.display='none';
+    document.getElementById('khint-txt').innerHTML=`🤖 預估 <b style="color:var(--ac);font-size:15px">${obj.kcal} kcal</b> <small style="color:var(--mu)">${obj.note}</small>`;
+    document.getElementById('kapply').style.display='inline-block';
+  } catch { document.getElementById('khint').classList.remove('on'); }
+}
+function applyHint() {
+  if(hintKcal) document.getElementById('fi-kcal').value=hintKcal;
+  document.getElementById('khint').classList.remove('on');
+}
+function addManual() {
+  const name=document.getElementById('fi-name').value.trim();
+  const kcal=parseInt(document.getElementById('fi-kcal').value);
+  if(!name){toast('請輸入食物名稱');return;}
+  if(!kcal||kcal<1){toast('請輸入熱量（或等 AI 預估後點套用）');return;}
+  const td=TD();
+  if(!DATA[td]) DATA[td]={steps:[],foods:[]};
+  DATA[td].foods.push({type:'manual',name,kcal,imgKey:null,t:NW()});
+  saveData();
+  document.getElementById('fi-name').value='';
+  document.getElementById('fi-kcal').value='';
+  document.getElementById('khint').classList.remove('on');
+  hintKcal=null;
+  toast(`已記錄 ${name}，${kcal} kcal`);
+  rendFood(); updateAll();
+}
+function delFood(i) {
+  DATA[TD()].foods.splice(i,1);
+  saveData(); rendFood(); updateAll();
+}
+function rendFood() {
+  const td=TD(), d=DATA[td]||{foods:[]};
+  const tot=d.foods.reduce((s,x)=>s+x.kcal,0);
+  document.getElementById('f-tot').textContent=tot?`共 ${tot} kcal`:'';
+  const con=document.getElementById('f-log');
+  if(!d.foods.length){con.innerHTML='<div class="empty"><div class="ei">🥗</div>今天還沒記錄飲食</div>';return;}
+  con.innerHTML=d.foods.map((x,i)=>{
+    const img=x.imgKey?IMG[x.imgKey]:null;
+    const thumb=img
+      ?`<div class="fthumb"><img src="${img}" alt=""></div>`
+      :`<div class="fthumb">${x.type==='manual'?'✏️':'🍽️'}</div>`;
+    return `<div class="fitem">${thumb}
+      <div style="flex:1"><div class="fn">${x.name}</div><div class="fd">${x.t}${x.type==='ai'?' · AI辨識':''}</div></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="fk">${x.kcal}<small style="font-size:10px;font-weight:400;color:var(--mu)"> kcal</small></div>
+        <button class="del" onclick="delFood(${i})">🗑️</button>
+      </div></div>`;
+  }).join('');
+}
+
+// ── Calc ──────────────────────────────────────────────
+function dayTot(ds) {
+  const d=DATA[ds]||{steps:[],foods:[]};
+  const ts=d.steps.reduce((s,x)=>s+x.n,0);
+  const sb=d.steps.reduce((s,x)=>s+x.kcal,0);
+  const ink=d.foods.reduce((s,x)=>s+x.kcal,0);
+  const bmr=PROF?calcBMR(PROF.weight,PROF.height,PROF.age,PROF.gender):0;
+  const tdee=PROF?calcTDEE(bmr,PROF.activity):0;
+  const def=tdee?tdee+sb-ink:0;
+  return{ts,sb,ink,bmr,tdee,def,wlg:Math.max(0,Math.round(def/7.7))};
+}
+function updateAll() {
+  const td=TD();
+  const{ts,sb,ink,bmr,tdee,def,wlg}=dayTot(td);
+  const ok=!!(PROF?.weight&&PROF?.age);
+  document.getElementById('warn').style.display=ok?'none':'block';
+  document.getElementById('h-steps').textContent=ts>=1000?`${(ts/1000).toFixed(1)}k`:ts;
+  document.getElementById('h-in').textContent=ink;
+  document.getElementById('h-sb').textContent=sb;
+  document.getElementById('h-bmr').textContent=bmr||'—';
+  document.getElementById('h-streak').textContent='🔥'+streakDays();
+  const wlEl=document.getElementById('h-wl');
+  wlEl.innerHTML=wlg>=1000?`${(wlg/1000).toFixed(2)}<span style="font-size:13px;color:var(--mu);margin-left:3px">kg</span>`:`${wlg}<span style="font-size:13px;color:var(--mu);margin-left:3px">g</span>`;
+  document.getElementById('h-wls').textContent=ok?`TDEE ${tdee} + 步行 ${sb} − 攝入 ${ink} = ${def} kcal`:'設定個人資料後啟用';
+  const mx=Math.max(tdee,ink,1);
+  const pct=v=>Math.min(100,v/mx*100)+'%';
+  document.getElementById('mb').style.width=pct(bmr);
+  document.getElementById('mt').style.width=pct(tdee);
+  document.getElementById('ms').style.width=pct(sb);
+  document.getElementById('mi').style.width=pct(ink);
+  document.getElementById('mbv').textContent=bmr?bmr+' kcal':'—';
+  document.getElementById('mtv').textContent=tdee?tdee+' kcal':'—';
+  document.getElementById('msv').textContent=sb+' kcal';
+  document.getElementById('miv').textContent=ink+' kcal';
+  const dv=document.getElementById('h-dv');
+  dv.textContent=ok?(def>=0?'+':'')+def+' kcal':'—';
+  dv.style.color=def>=0?'var(--ac)':'var(--a3)';
+  // Home food list
+  const foods=(DATA[td]||{}).foods||[];
+  document.getElementById('h-fc').textContent=foods.length?`共 ${ink} kcal`:'';
+  const fl=document.getElementById('h-fl');
+  if(!foods.length){fl.innerHTML='<div class="empty"><div class="ei">🥙</div>還沒記錄今日飲食</div>';}
+  else{
+    fl.innerHTML=[...foods].reverse().slice(0,3).map(x=>{
+      const img=x.imgKey?IMG[x.imgKey]:null;
+      const thumb=img?`<div class="fthumb"><img src="${img}" alt=""></div>`:`<div class="fthumb">🍽️</div>`;
+      return `<div class="fitem">${thumb}
+        <div style="flex:1"><div class="fn">${x.name}</div><div class="fd">${x.t}</div></div>
+        <div class="fk">${x.kcal}<small style="font-size:10px;color:var(--mu)"> kcal</small></div></div>`;
+    }).join('')+(foods.length>3?`<div style="text-align:center;padding:9px;font-size:11px;color:var(--mu)">還有 ${foods.length-3} 筆</div>`:'');
+  }
+  rendSteps(); rendFood();
+}
+
+// ── Stats ─────────────────────────────────────────────
+function streakDays() {
+  let n=0; const d=new Date();
+  while(n<365){
+    const k=d.toISOString().split('T')[0];
+    const day=DATA[k];
+    if(!day||(!day.steps?.length&&!day.foods?.length)) break;
+    n++; d.setDate(d.getDate()-1);
+  }
+  return n;
+}
+function buildChart() {
+  const days=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().split('T')[0]);}
+  const tots=days.map(dayTot);
+  const n=tots.length||1;
+  const avg=f=>Math.round(tots.reduce((s,x)=>s+x[f],0)/n);
+  const ww=tots.reduce((s,x)=>s+x.wlg,0);
+  document.getElementById('st-as').textContent=avg('ts').toLocaleString();
+  document.getElementById('st-ab').textContent=avg('sb');
+  document.getElementById('st-ai').textContent=avg('ink');
+  const ad=avg('def'); document.getElementById('st-ad').textContent=ad>0?'+'+ad:ad;
+  document.getElementById('st-wl').textContent=ww>=1000?(ww/1000).toFixed(2)+' kg':ww+'g';
+  const defs=tots.map(x=>x.def), mx=Math.max(...defs.map(Math.abs),1);
+  const lbs='日一二三四五六', td=TD();
+  document.getElementById('wchart').innerHTML=days.map((ds,i)=>{
+    const def=defs[i],h=Math.round(Math.abs(def)/mx*80);
+    const isTd=ds===td;
+    const bg=isTd?'linear-gradient(to top,#c8f566,#e0ff90)':def>0?'linear-gradient(to top,#ff7c5c,#ff9070)':'#2a3045';
+    const day=lbs[new Date(ds+'T00:00:00').getDay()];
+    return `<div class="bcol"><div class="bar" style="height:${h}px;background:${bg}"></div><div class="bday" style="${isTd?'color:var(--ac);font-weight:700':''}">${day}</div></div>`;
+  }).join('');
+}
+
+// ── Data management ───────────────────────────────────
+function clearToday() {
+  if(!confirm('確定清除今日所有記錄？')) return;
+  delete DATA[TD()]; saveData(); updateAll(); toast('今日記錄已清除');
+}
+function clearAll() {
+  if(!confirm('確定清除所有資料？無法復原！')) return;
+  DATA={}; saveData(); updateAll(); toast('所有資料已清除');
+}
+</script>
+</body>
+</html>
